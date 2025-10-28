@@ -96,7 +96,7 @@ export class Projects {
 		 */
 		delete: (workspaceId: number, projectUserId: number) => {
 			return this.toggl.request(
-				'workspaces/{workspaceId}/project_users/{projectUserId}',
+				`workspaces/${workspaceId}/project_users/${projectUserId}`,
 				{ method: 'DELETE' }
 			);
 		},
@@ -286,6 +286,6 @@ export interface IWorkspaceProject {
 }
 
 export interface UpdateBulkResponse {
-	failure: any; // NOTE: Toggl's API docs does not specify the type
-	success: any; // NOTE: Toggl's API docs does not specify the type
+	failure: unknown; // NOTE: Toggl's API docs does not specify the type
+	success: unknown; // NOTE: Toggl's API docs does not specify the type
 }

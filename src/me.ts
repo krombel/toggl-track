@@ -1,4 +1,3 @@
-import { ExecOptionsWithStringEncoding } from 'child_process';
 import { Toggl } from './toggl';
 import { IWorkspaceProject } from './projects';
 import { ITag } from './tags';
@@ -245,7 +244,7 @@ export interface IMe {
 	intercom_hash?: string;
 	openid_email: string; // format: email
 	openid_enabled: boolean;
-	options: any;
+	options: unknown;
 	timezone: string;
 	updated_at: string; // format: date-time
 }

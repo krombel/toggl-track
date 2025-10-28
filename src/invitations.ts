@@ -30,6 +30,6 @@ export class Invitations {
 }
 
 export interface ICreateResponse {
-	data: any; // NOTE: Toggl's API docs does not specify the type
-	messages: any; // NOTE: Toggl's API docs does not specify the type
+	data: unknown; // NOTE: Toggl's API docs does not specify the type
+	messages: unknown; // NOTE: Toggl's API docs does not specify the type
 }
