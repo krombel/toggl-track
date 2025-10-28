@@ -1,9 +1,9 @@
-import { Axios } from 'axios';
 import { Me } from './me';
 import { TimeEntry } from './timeEntry';
 import { Invitations } from './invitations';
 import { Projects } from './projects';
 import { Tags } from './tags';
+import { ResponseError, TogglRatelimitError } from './errors';
 
 export class Toggl {
 	public me = new Me(this);
@@ -12,25 +12,24 @@ export class Toggl {
 	public projects = new Projects(this);
 	public tags = new Tags(this);
 
-	private axios: Axios;
+	private baseURL: string;
+	private headers: HeadersInit;
 
 	constructor({
 		auth,
 		baseURL = 'https://api.track.toggl.com/api/v9',
-		axiosConfig,
+		fetchInit = {},
 	}: {
 		auth: Auth;
 		baseURL?: string;
-		axiosConfig?: any;
+		fetchInit?: RequestInit;
 	}) {
-		this.axios = new Axios({
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: this.authHeader(auth),
-			},
-			baseURL,
-			...axiosConfig,
-		});
+		this.baseURL = baseURL;
+		this.headers = {
+			'Content-Type': 'application/json',
+			Authorization: this.authHeader(auth),
+			...fetchInit.headers,
+		};
 	}
 
 	public async request<T = unknown>(
@@ -39,12 +38,12 @@ export class Toggl {
 			body,
 			query,
 			method = 'GET',
-			axiosConfig,
+			fetchInit = {},
 		}: {
 			body?: object;
 			query?: Record<string, string | number | boolean | null | undefined>;
 			method?: string;
-			axiosConfig?: any;
+			fetchInit?: RequestInit;
 		} = {}
 	) {
 		const normalizedQuery: Record<string, string> = {};
@@ -57,34 +56,44 @@ export class Toggl {
 			normalizedQuery[key] = `${val}`; // to string
 		}
 		const params = new URLSearchParams(normalizedQuery);
-		const url = Array.from(params).length
-			? endpoint + `?${params.toString()}`
-			: endpoint;
-
-		const { data } = await this.axios.request<T>({
-			url,
-			method,
-			data: JSON.stringify(body),
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			...axiosConfig,
-		});
-
-		// Sometimes Axios returns data as a string, rather than parsing it as JSON.
-		// This seems to be a bug with Axios???
-		if (typeof data === 'string') {
-			try {
-				return JSON.parse(data as unknown as string);
-			} catch (e) {
-				// more parse failure
-			}
+		const url = new URL(this.baseURL + '/' + endpoint);
+		if (Array.from(params).length) {
+			url.search = params.toString();
 		}
 
-		return data;
+		const response = await fetch(url, {
+			method,
+			body: body ? JSON.stringify(body) : undefined,
+			headers: this.headers,
+			...fetchInit,
+		});
+
+		if (!response.ok) {
+			if (response.status === 402) {
+				const resetHeader =
+					response.headers.get('X-Toggl-Quota-Resets-In') || '0';
+				console.warn(`Ratelimit exceeded. Resets in ${resetHeader} seconds.`);
+				throw new TogglRatelimitError(Number(resetHeader));
+			}
+			throw new ResponseError(
+				`HTTP error! status: ${response.status}`,
+				response
+			);
+		}
+
+		// do not use response.json() directly to be able to log parsing errors
+		const dataBody = await response.text();
+		try {
+			return JSON.parse(dataBody) as T;
+		} catch (e) {
+			console.error(
+				`Failed to parse "${dataBody}" as JSON response: ${(e as Error).message}`
+			);
+			return dataBody as unknown as T;
+		}
 	}
 
-	private authHeader(auth: Auth) {
+	private authHeader(auth: Auth): string {
 		const isToken = 'token' in auth;
 
 		const authSecret = isToken
