@@ -1,4 +1,5 @@
 export * from './toggl';
+export * from './errors';
 
 export * from './invitations';
 export * from './me';
