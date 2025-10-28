@@ -173,6 +173,6 @@ export interface ITimeEntry {
 }
 
 export interface IUpdateBulkResponse {
-	failure: any; // NOTE: Toggl's API docs does not specify the type
-	success: any; // NOTE: Toggl's API docs does not specify the type
+	failure: unknown; // NOTE: Toggl's API docs does not specify the type
+	success: unknown; // NOTE: Toggl's API docs does not specify the type
 }
