@@ -47,10 +47,7 @@ export class Toggl {
 		} = {}
 	) {
 		const normalizedQuery: Record<string, string> = {};
-		for (const key in query) {
-			if (!query.hasOwnProperty(key)) continue;
-
-			const val = query[key];
+		for (const [key, val] of Object.entries(query ?? {})) {
 			if (val === undefined || val === null) continue;
 
 			normalizedQuery[key] = `${val}`; // to string
