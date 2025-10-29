@@ -15,6 +15,8 @@ export class Toggl {
 	private baseURL: string;
 	private headers: HeadersInit;
 
+	private rateLimitedUntil: Date | null = null;
+
 	constructor({
 		auth,
 		baseURL = 'https://api.track.toggl.com/api/v9',
@@ -46,6 +48,10 @@ export class Toggl {
 			fetchInit?: RequestInit;
 		} = {}
 	) {
+		const ratelimitResetIn = this.getRateLimitedUntil();
+		if (ratelimitResetIn > 0) {
+			throw new TogglRatelimitError(ratelimitResetIn);
+		}
 		const normalizedQuery: Record<string, string> = {};
 		for (const [key, val] of Object.entries(query ?? {})) {
 			if (val === undefined || val === null) continue;
@@ -67,10 +73,12 @@ export class Toggl {
 
 		if (!response.ok) {
 			if (response.status === 402) {
-				const resetHeader =
-					response.headers.get('X-Toggl-Quota-Resets-In') || '0';
-				console.warn(`Ratelimit exceeded. Resets in ${resetHeader} seconds.`);
-				throw new TogglRatelimitError(Number(resetHeader));
+				const resetIn = Number(
+					response.headers.get('X-Toggl-Quota-Resets-In') || '0'
+				);
+				console.warn(`Ratelimit exceeded. Resets in ${resetIn} seconds.`);
+				this.rateLimitedUntil = new Date(Date.now() + resetIn * 1000);
+				throw new TogglRatelimitError(resetIn);
 			}
 			throw new ResponseError(
 				`HTTP error! status: ${response.status}`,
@@ -88,6 +96,22 @@ export class Toggl {
 			);
 			return dataBody as unknown as T;
 		}
+	}
+
+	/**
+	 *
+	 * @returns number of seconds until ratelimit is cleared. 0 if no ratelimit exists
+	 */
+	public getRateLimitedUntil(): number {
+		if (this.rateLimitedUntil) {
+			if (this.rateLimitedUntil > new Date()) {
+				return Math.ceil((this.rateLimitedUntil.getTime() - Date.now()) / 1000);
+			} else {
+				// clear outdated rate limit
+				this.rateLimitedUntil = null;
+			}
+		}
+		return 0;
 	}
 
 	private authHeader(auth: Auth): string {
