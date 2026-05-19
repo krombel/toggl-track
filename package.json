@@ -1,6 +1,6 @@
 {
 	"name": "toggl-track",
-	"version": "0.9.1",
+	"version": "0.9.1-1",
 	"description": "A TypeScript client for the Toggl Track API (v9)",
 	"keywords": [
 		"toggl",
@@ -26,10 +26,10 @@
 		"lib/**/*"
 	],
 	"engines": {
-		"node": ">=18.0.0"
+		"node": ">=20.0.0"
 	},
 	"resolutions": {
-		"@types/node": "22.15.31"
+		"@types/node": "^22.15.31"
 	},
 	"scripts": {
 		"build": "tsc",
@@ -43,13 +43,14 @@
 	},
 	"prettier": "@garyhtou/prettier-config",
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
 		"@garyhtou/prettier-config": "^1.0.1",
 		"@types/node": "^22",
-		"eslint": "^9.38.0",
+		"eslint": "^10.4.0",
 		"eslint-config-prettier": "^10.1.8",
-		"prettier": "^3.6.2",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.46.2"
+		"prettier": "^3.8.3",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.59.4"
 	},
-	"packageManager": "yarn@1.22.22"
+	"packageManager": "yarn@4.18.0"
 }
